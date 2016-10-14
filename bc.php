@@ -1,6 +1,8 @@
 <?php
-
 namespace n1ghteyes;
+//@todo replace this with auto loading.
+include 'classes/cache/cache.php';
+include 'classes/carousel/carousel.php';
 
 //Load the required classes
 use n1ghteyes\bootstrapCarousel\cache;
@@ -24,7 +26,6 @@ class bootstrapCarousel
 {
 
   public $logging; //Bool | Do we want logging?
-  public $activeId; //Mixed | The if of the last carousel used, edited, printed or otherwise interacted with
 
   private $activeCarousel = FALSE; //The currently active carousel object, or false if there isn't one.
   private $carousels = []; //An array of all carousels
@@ -36,12 +37,10 @@ class bootstrapCarousel
    * @param bool|FALSE $logging
    * @param array $log_config
    */
-  public function __construct($id = '', $logging = FALSE, $log_config = [])
+  public function __construct($id = FALSE, $logging = FALSE, $log_config = [])
   {
-    //autoload the required classes
-    spl_autoload_register(__NAMESPACE__.'\carousel\carousel.php');
     //set a default carousel object as we can't do this on declaration, also fixes IDE errors
-    $this->activeCarousel = new carousel($id);
+    $this->activeCarousel = new carousel($this->_setSafeId($id));
     $this->_logging($logging, $log_config);
     return $this;
   }
@@ -53,11 +52,27 @@ class bootstrapCarousel
    * @return $this
    */
   public function addCarousel($id, $config = [], $logging = FALSE, $log_config = []){
-    $this->activeCarousel = new carousel($id, $config);
+    $this->activeCarousel = new carousel($this->_setSafeId($id), $config);
     if(isset($this->carousels[$this->activeCarousel->id]) && $this->logging) {
       $this->log->ql('A Carousel with the ID of { ' . $this->activeCarousel->id . ' } already existed and has been overwritten');
     }
     $this->carousels[$this->activeCarousel->id] = $this->activeCarousel;
+    return $this;
+  }
+
+  /**
+   * Public wrapper for the carousel config function, allows us to change config for a carousel at any point before output.
+   * @param array $config
+   * @param string $id
+   * @return $this
+   */
+  public function configCarousel($config = [], $id = FALSE){
+    $id = $this->_setSafeId($id);
+    if(isset($id) && isset($this->carousels[$id])) {
+      $this->carousels[$id]->configCarousel($config);
+    } else {
+      $this->activeCarousel->configCarousel($config);
+    }
     return $this;
   }
 
@@ -104,6 +119,7 @@ class bootstrapCarousel
    * @return $this
    */
   public function __get($name){
+    $name = $this->_setSafeId($name);
     if($this->activeCarousel && $this->activeCarousel->id == $name){
       //we're already active so no need to do anything here.
       return $this;
@@ -137,22 +153,21 @@ class bootstrapCarousel
    * @param string $id
    * @return bootstrapCarousel
    */
-  public function build($id = ''){
-    return $this->_getCarouselMarkup($id);
+  public function build($id = FALSE){
+    return $this->_getCarouselMarkup($this->_setSafeId($id));
   }
 
   /**
    * Function to build and output the markup and possibly JS (depending on config) needed to generate a carousel
-   * If an ID is passed into this function, the active carousel is changed accordingly.
    * @param string $id
    * @return $this
    */
   private function _getCarouselMarkup($id)
   {
+    $id = $this->_setSafeId($id);
     if(isset($id)){
       if(isset($this->carousels[$id])) {
-        $this->activeCarousel = $this->carousels[$id];
-        return $this->activeCarousel->getCarousel($this->refreshActive);
+        return $this->carousels[$id]->getMarkup($this->refreshActive);
       } else {
         if($this->log){
           $this->log->ql('Failed to return markup for the specified carousel ID: { ' . $id . ' }, it doesnt exist');
@@ -163,4 +178,13 @@ class bootstrapCarousel
     return $this->activeCarousel->getMarkup($this->refreshActive);
   }
 
+  /**
+   * Function to make the last passed ID safe.
+   * Converts spaces and hyphens to underscores
+   * @param $id
+   * @return mixed
+   */
+  private function _setSafeId($id){
+      return preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(array(' ', '-'), '_', $id)); // Removes special chars.
+  }
 }

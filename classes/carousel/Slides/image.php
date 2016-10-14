@@ -16,34 +16,39 @@ namespace n1ghteyes\bootstrapCarousel\carousel;
     public $height;
     public $width;
     public $type;
-    public $size;
+    public $fileSize;
+    public $sizeOutput;
     public $mime;
     public $filename;
     public $mtime;
-    public $path = ''; //String | Base path for images,
+    public $filepath = ''; //String | Base path for images,
     public $title;
     public $alt;
 
+    private $rootDir; //Probably a better way to do this, but oh well.
     private $remote = FALSE; //Bool | If specified, ALL images will be considered to be remotely loaded. If cacheDir is also specified, these will be saved locally
 
     public function __construct($path, $attributes = [], $remote = FALSE, $log = FALSE){
-      $this->path = $path;
+      $this->filepath = $path;
       $this->remote = $remote;
       $this->_populate($attributes);
     }
 
     private function _populate($attributes){
-      $imagesize = getimagesize($this->path);
+      $this->rootDir = isset($attributes['rootDir']) ? $attributes['rootDir'] : $this->rootDir;
 
+      $imagesize = getimagesize($this->rootDir.$this->filepath);
       $this->width = isset($attributes['width']) ? $attributes['width'] : $imagesize[0];
       $this->height = isset($attributes['height']) ? $attributes['height'] : $imagesize[1];
       $this->type = $imagesize[2];
       $this->sizeOutput = $imagesize[3];
+      $this->fileSize = $this->_fileSize(filesize($this->rootDir.$this->filepath));
       $this->mime = $imagesize['mime'];
-      $this->filename = $this->getFilename($this->path, $this->remote);
-      $this->mtime = filemtime($this->path);
+      $this->filename = $this->getFilename($this->filepath, $this->remote);
+      $this->mtime = filemtime($this->rootDir.$this->filepath);
       $this->title = isset($attributes['title']) ? $attributes['title'] : $this->filename;
       $this->alt = isset($attributes['alt']) ? $attributes['alt'] : $this->filename;
+
     }
 
     /**
@@ -59,5 +64,24 @@ namespace n1ghteyes\bootstrapCarousel\carousel;
         $pos = strrpos($path, '/');
         return  $pos === false ? $path : substr($path, $pos + 1);
       }
+    }
+
+    /**
+     * Function to work out file size and apply appropriate units.
+     * @see http://stackoverflow.com/a/2510459/2412837
+     * @param $bytes
+     * @param int $precision
+     * @return string
+     * @todo put this in a better place since we'll want to use it in other slide classes.
+     */
+    private function _fileSize($bytes, $precision = 2){
+      $units = array('B', 'KB', 'MB', 'GB', 'TB');
+
+      $bytes = max($bytes, 0);
+      $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+      $pow = min($pow, count($units) - 1);
+      $bytes /= (1 << (10 * $pow));
+
+      return round($bytes, $precision) . ' ' . $units[$pow];
     }
   }

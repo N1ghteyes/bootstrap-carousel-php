@@ -1,8 +1,11 @@
 <?php
 
 namespace n1ghteyes\bootstrapCarousel;
+//@todo replace this with auto loading.
+include 'slides/image.php';
 use n1ghteyes\bootstrapCarousel\carousel\image;
 
+  define('DOCUMENT_ROOT', $_SERVER['DOCUMENT_ROOT']);
   /**
    * PHP class to handle caching for the Bootstrap Carousel library
    *
@@ -27,6 +30,7 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     public $activeSlideNo = 0;//Int | The slide number of the one we wish to set as active when we start.
     public $leftIcon = 'glyphicon glyphicon-chevron-left'; //String | the icon classes to pass for the left control icon
     public $rightIcon = 'glyphicon glyphicon-chevron-right'; //String | the icon classes to pass for the right control icon
+    public $rootDir = DOCUMENT_ROOT; //String | the directory root path for all files used. (normally default is fine).
 
     private $log; //Logging object, or FALSE if one isn't passed in.
     private $slides; //array of slides in this carousel
@@ -40,9 +44,8 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
      * @param bool|FALSE $log
      */
     public function __construct($id, $params = [], $log = FALSE){
-      spl_autoload_register(__NAMESPACE__);
       $this->log = $log;
-      $this->_setSafeId($id);
+      $this->id = $id;
       $this->configCarousel($params);
     }
 
@@ -107,16 +110,6 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     }
 
     /**
-     * Function to make the last passed ID safe.
-     * Converts spaces and hyphens to underscores
-     * @param $id
-     * @return mixed
-     */
-    private function _setSafeId($id){
-      $this->id = preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(array(' ', '-'), '_', $id)); // Removes special chars.
-    }
-
-    /**
      * Function to build the markup for the carousel.
      * @return $this
      */
@@ -155,10 +148,11 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
      * @return mixed
      */
     private function _slideDefaults($config){
-      $config['caption'] = isset($config['caption']) ? $config['caption'] : '';
-      $config['title'] = isset($config['title']) ? $config['title'] : '';
+      $config['caption'] = isset($config['caption']) ? $config['caption'] : FALSE;
+      $config['title'] = isset($config['title']) ? $config['title'] : FALSE;
       $config['attributes'] = isset($config['attributes']) ? $config['attributes'] : [];
       $config['remote'] = isset($config['remote']) ? $config['remote'] : FALSE;
+      $config['attributes']['rootDir'] = isset($config['attributes']['rootDir']) ? $config['attributes']['rootDir'] : $this->rootDir;
 
       return $config;
     }
@@ -189,7 +183,7 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     private function _markupSlideNavThumbs($ignore = FALSE){
       if($this->slideDots || $ignore) {
         $this->markup .= '<ol class="carousel-indicators">';
-        for ($i = 0; $this->slideNo <= $i; ++$i) {
+        for ($i = 0; $i < $this->slideNo; ++$i) {
           $this->markup .= '<li data-target="#' . $this->id . '" data-slide-to="' . $i . '" ' . ($this->activeSlideNo == $i ? 'class="active"' : '') . '></li>';
         }
         $this->markup .= '</ol>';
@@ -202,9 +196,9 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
      * @return $this
      */
     private function _markupSlides(){
-      $this->markup = '<div class="carousel-inner" role="listbox">';
+      $this->markup .= '<div class="carousel-inner" role="listbox">';
       $keys = array_keys($this->slides);
-      for($i = 0; $this->slideNo <= $i; ++$i){
+      for($i = 0; $i < $this->slideNo; ++$i){
         $slide = $this->slides[$keys[$i]];
         switch($slide->slideType){
           case 'video':
@@ -229,10 +223,10 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
      */
     private function _markupImageSlide($slide, $slideNo){
       $this->_markupSlideOpen($slideNo);
-      $this->markup .= '<img src="'.$slide->path.'" alt="'.$slide->alt.'" title="'.$slide->title.'" width="'.$slide->width.'" height="'.$slide->height.'">';
+      $this->markup .= '<img src="'.$slide->filepath.'" alt="'.$slide->alt.'" title="'.$slide->title.'" width="'.$slide->width.'" height="'.$slide->height.'">';
       $this->markup .= isset($slide->slideTitle) || isset($slide->caption) ? '<div class="carousel-caption">' : '';
       $this->markup .= isset($slide->slideTitle) ? '<h3>'.$slide->slideTitle.'</h3>' : '';
-      $this->markup .= isset($slide->caption) ? '<p>'.$slide->caption.'<p>' : '';
+      $this->markup .= isset($slide->caption) ? '<p>'.$slide->caption.'</p>' : '';
       $this->markup .= isset($slide->slideTitle) || isset($slide->caption) ? '</div>' : '';
       $this->_markupSlideClose();
       return $this;
@@ -248,7 +242,7 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     private function _markupSlideControl($side, $direction, $text = ''){
       if($this->nav) {
         $this->markup .= '<a class="' . $side . ' carousel-control" href="#' . $this->id . '" role="button" data-slide="' . $direction . '">';
-        $this->markup .= '<span class="' . $this->{$side.'Icon'} . '" aria-hidden="true"></span>';
+        $this->markup .= '<span class="icon-' . $side . ' ' . $this->{$side.'Icon'} . '" aria-hidden="true"></span>';
         $this->markup .= '<span class="sr-only">' . $text . '</span>';
         $this->markup .= '</a>';
       }
