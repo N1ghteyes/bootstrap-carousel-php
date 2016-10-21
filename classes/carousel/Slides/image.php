@@ -48,7 +48,6 @@ namespace n1ghteyes\bootstrapCarousel\carousel;
       $this->mtime = filemtime($this->rootDir.$this->filepath);
       $this->title = isset($attributes['title']) ? $attributes['title'] : $this->filename;
       $this->alt = isset($attributes['alt']) ? $attributes['alt'] : $this->filename;
-
     }
 
     /**

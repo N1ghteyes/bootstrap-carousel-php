@@ -101,6 +101,15 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     }
 
     /**
+     * Function to get slide data based on the path.
+     * @param $path
+     * @return $this
+     */
+    public function getSlide($key){
+      return isset($this->slides[$key]) ? $this->slides[$key] : FALSE;
+    }
+
+    /**
      * Function to return the markup for the current carousel
      * @return mixed
      */
@@ -129,8 +138,9 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
       $config = $this->_slideDefaults($config);
       $this->slides[$image] = new image($image, $config['attributes'], $config['remote']);
       $this->slides[$image]->slideType = 'image'; //we add this here because the image class doesn't need to know that other types exist.
-      $this->slides[$image]->slideTitle = $config['title']; //we add this here because the image class doesn't need to know that other types exist.
-      $this->slides[$image]->caption = $config['caption']; //we add this here because the image class doesn't need to know that other types exist.
+      $this->slides[$image]->slideTitle = $config['title'];
+      $this->slides[$image]->caption = $config['caption'];
+      $this->slides[$image]->link = $config['link'];
       $this->slideNo = count($this->slides); //Store the new total number of slides. Allows us to avoid counting in several places.
     }
 
@@ -150,6 +160,7 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     private function _slideDefaults($config){
       $config['caption'] = isset($config['caption']) ? $config['caption'] : FALSE;
       $config['title'] = isset($config['title']) ? $config['title'] : FALSE;
+      $config['link'] = isset($config['link']) ? $config['link'] : FALSE;
       $config['attributes'] = isset($config['attributes']) ? $config['attributes'] : [];
       $config['remote'] = isset($config['remote']) ? $config['remote'] : FALSE;
       $config['attributes']['rootDir'] = isset($config['attributes']['rootDir']) ? $config['attributes']['rootDir'] : $this->rootDir;
@@ -223,7 +234,9 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
      */
     private function _markupImageSlide($slide, $slideNo){
       $this->_markupSlideOpen($slideNo);
+      if(isset($slide->link)){ $this->markup .= '<a href="'.$slide->link.'">'; }
       $this->markup .= '<img src="'.$slide->filepath.'" alt="'.$slide->alt.'" title="'.$slide->title.'" width="'.$slide->width.'" height="'.$slide->height.'">';
+      if(isset($slide->link)){ $this->markup .= '</a>'; }
       $this->markup .= isset($slide->slideTitle) || isset($slide->caption) ? '<div class="carousel-caption">' : '';
       $this->markup .= isset($slide->slideTitle) ? '<h3>'.$slide->slideTitle.'</h3>' : '';
       $this->markup .= isset($slide->caption) ? '<p>'.$slide->caption.'</p>' : '';
@@ -234,6 +247,7 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
 
     /**
      * Function to generate the Nav for the slider.
+     * @NOTE inline styling used to allow for font awesome icons without the user having to style them
      * @param $side
      * @param $direction
      * @param string $text
@@ -242,7 +256,7 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
     private function _markupSlideControl($side, $direction, $text = ''){
       if($this->nav) {
         $this->markup .= '<a class="' . $side . ' carousel-control" href="#' . $this->id . '" role="button" data-slide="' . $direction . '">';
-        $this->markup .= '<span class="icon-' . $side . ' ' . $this->{$side.'Icon'} . '" aria-hidden="true"></span>';
+        $this->markup .= '<span class="icon-' . $side . ' ' . $this->{$side.'Icon'} . '" aria-hidden="true" style="top: 50%; position: absolute; text-decoration: none; font-size: 35px; margin-top: -15px;"></span>';
         $this->markup .= '<span class="sr-only">' . $text . '</span>';
         $this->markup .= '</a>';
       }

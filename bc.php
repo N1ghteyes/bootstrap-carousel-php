@@ -26,8 +26,9 @@ class bootstrapCarousel
 {
 
   public $logging; //Bool | Do we want logging?
+  public $activeMarkup;
+  public $activeCarousel = FALSE; //The currently active carousel object, or false if there isn't one.
 
-  private $activeCarousel = FALSE; //The currently active carousel object, or false if there isn't one.
   private $carousels = []; //An array of all carousels
   private $log = FALSE; //log object.
   private $refreshActive = FALSE; //This is set to true if new slides are added.
@@ -154,7 +155,21 @@ class bootstrapCarousel
    * @return bootstrapCarousel
    */
   public function build($id = FALSE){
-    return $this->_getCarouselMarkup($this->_setSafeId($id));
+    $this->activeMarkup = $this->_getCarouselMarkup($this->_setSafeId($id));
+    return $this;
+  }
+
+  /**
+   * Impliments __toString magic method to return the markup of the current built banner or if there is none, the active one.
+   * @return mixed
+   */
+  public function __toString()
+  {
+    //No active markup? better make an attempt to get some.
+    if(!isset($this->activeMarkup)){
+      $this->build($this->activeCarousel->id);
+    }
+    return $this->activeMarkup;
   }
 
   /**
