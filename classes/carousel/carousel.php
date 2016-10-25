@@ -237,10 +237,10 @@ use n1ghteyes\bootstrapCarousel\carousel\image;
       if(isset($slide->link)){ $this->markup .= '<a href="'.$slide->link.'">'; }
       $this->markup .= '<img src="'.$slide->filepath.'" alt="'.$slide->alt.'" title="'.$slide->title.'" width="'.$slide->width.'" height="'.$slide->height.'">';
       if(isset($slide->link)){ $this->markup .= '</a>'; }
-      $this->markup .= isset($slide->slideTitle) || isset($slide->caption) ? '<div class="carousel-caption">' : '';
-      $this->markup .= isset($slide->slideTitle) ? '<h3>'.$slide->slideTitle.'</h3>' : '';
-      $this->markup .= isset($slide->caption) ? '<p>'.$slide->caption.'</p>' : '';
-      $this->markup .= isset($slide->slideTitle) || isset($slide->caption) ? '</div>' : '';
+      $this->markup .= !empty($slide->slideTitle) || !empty($slide->caption) ? '<div class="carousel-caption">' : '';
+      $this->markup .= !empty($slide->slideTitle) ? '<h3>'.$slide->slideTitle.'</h3>' : '';
+      $this->markup .= !empty($slide->caption) ? '<p>'.$slide->caption.'</p>' : '';
+      $this->markup .= !empty($slide->slideTitle) || !empty($slide->caption) ? '</div>' : '';
       $this->_markupSlideClose();
       return $this;
     }
